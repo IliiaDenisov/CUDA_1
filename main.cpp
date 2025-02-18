@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include "Functions.h"
+#include "CL/cl.hpp"
 
 using namespace std;
 using namespace cv;
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
 	}
 
 #pragma region Init
-	cv::Mat img = imread(argv[1], IMREAD_COLOR);
+	cv::Mat img = imread(argv[1], IMREAD_COLOR);	
 	if (img.empty())
 	{
 		cerr << "Error: Image is not loaded" << endl;
@@ -48,10 +49,10 @@ int main(int argc, char** argv)
 
 	elapsedTimeCPU = (double)(stopCPU - startCPU) / CLOCKS_PER_SEC;
 	cout << "CPU sum time = " << elapsedTimeCPU * 1000 << " ms\n";
-	cout << "CPU memory throughput = " << static_cast<unsigned long long>(N) * sizeof(unsigned char) / elapsedTimeCPU / 1024 / 1024 / 1024 << " Gb/s\n";
 #pragma endregion
 
-#pragma region CUDA
+#pragma region GPU
+#ifdef USE_CUDA
 	cudaMalloc(&device_img, N * sizeof(unsigned char));
 	cudaMemcpy(device_img, img_gpu.ptr<unsigned char>(), N * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
@@ -70,6 +71,15 @@ int main(int argc, char** argv)
 
 	cout << "CUDA sum time = " << elapsedTimeCUDA << " ms\n";
 	cout << "CUDA memory throughput = " << static_cast<unsigned long long>(N) * sizeof(unsigned char) / elapsedTimeCUDA / 1024 / 1024 / 1.024 << " Gb/s\n";
+#else
+	clock_t startGPU, stopGPU;
+	startGPU = clock();
+	adjustBrightnessGPUOpenCL(img_gpu.ptr<unsigned char>(), img_gpu.rows, img_gpu.cols, a, b);
+	stopGPU = clock();
+
+	float elapsedTimeGPU = (double)(stopGPU - startGPU) / CLOCKS_PER_SEC;
+	cout << "GPU time = " << elapsedTimeGPU * 1000 << " ms\n";
+#endif
 #pragma endregion
 
 #pragma region Results

@@ -1,6 +1,7 @@
 ﻿#include "Functions.h"
 
-__device__ unsigned char adjustChannel(unsigned char channelValue, unsigned char a, unsigned char b) {
+__device__ unsigned char adjustChannel(unsigned char channelValue, unsigned char a, unsigned char b) 
+{
 	return static_cast<unsigned char>(trunc((static_cast<double>(channelValue - a) / (b - a)) * 255.0));
 }
 
